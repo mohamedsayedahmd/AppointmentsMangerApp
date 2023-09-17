@@ -9,7 +9,7 @@ namespace AppointmentsManger.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         // Here we define db table DbSet<Model>
-        public DbSet<Appointement> Appointements { get; set; }
+        public DbSet<Appointment> Appointements { get; set; }
 
     }
 }

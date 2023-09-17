@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AppointmentsManger.Data.Models
 {
-    public class Appointement
+    public class Appointment
     {
         [Key]
         public int ID { get; set; }

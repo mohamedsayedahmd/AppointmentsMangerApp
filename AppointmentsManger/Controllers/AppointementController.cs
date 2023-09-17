@@ -10,37 +10,45 @@ using AppointmentsManger.Data.Models;
 
 namespace AppointmentsManger.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/appointment")]
     [ApiController]
     public class AppointementController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _dbContext;
 
         public AppointementController(AppDbContext context)
         {
-            _context = context;
+            _dbContext = context;
         }
 
-        // GET: api/Appointement
+
+
+
+        // GET: api/appointement - default
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Appointement>>> GetAppointements()
+        public async Task<ActionResult<IEnumerable<Appointment>>> GetAppointements()
         {
-          if (_context.Appointements == null)
-          {
-              return NotFound();
-          }
-            return await _context.Appointements.ToListAsync();
+            if (_dbContext.Appointements == null)
+            {
+                return NotFound("No Data Found");
+            }
+            // filter                                  e === row
+            return await _dbContext.Appointements.Where(e => !e.Deleted && !e.Done).ToListAsync();
         }
+
+
+
+
 
         // GET: api/Appointement/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Appointement>> GetAppointement(int id)
+        public async Task<ActionResult<Appointment>> GetAppointement(int id)
         {
-          if (_context.Appointements == null)
-          {
-              return NotFound();
-          }
-            var appointement = await _context.Appointements.FindAsync(id);
+            if (_dbContext.Appointements == null)
+            {
+                return NotFound();
+            }
+            var appointement = await _dbContext.Appointements.FindAsync(id);
 
             if (appointement == null)
             {
@@ -50,27 +58,73 @@ namespace AppointmentsManger.Controllers
             return appointement;
         }
 
+
+
+
+
         // PUT: api/Appointement/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAppointement(int id, Appointement appointement)
+        public async Task<IActionResult> PutAppointement(int id, Appointment appointment)
         {
-            if (id != appointement.ID)
+            if (id != appointment.ID)
             {
-                return BadRequest();
+                return BadRequest("You are trying to modify the wrong appointment");
             }
-
-            _context.Entry(appointement).State = EntityState.Modified;
-
+            // I) using libary automapper
+            
             try
-            {
-                await _context.SaveChangesAsync();
+            {// II) checking manualy each col one by one
+
+                Appointment entry_ = await _dbContext.Appointements.FirstAsync(e => e.ID == appointment.ID);
+
+                if (entry_.Title != appointment.Title)
+                {
+                    entry_.Title = appointment.Title;
+                }
+
+                if (entry_.Description != appointment.Description)
+                {
+                    entry_.Description = appointment.Description;
+                }
+
+                if (entry_.Address != appointment.Address)
+                {
+                    entry_.Address = appointment.Address;
+                }
+
+                if (entry_.LevelOfImportance != appointment.LevelOfImportance)
+                {
+                    entry_.LevelOfImportance = appointment.LevelOfImportance;
+                }
+
+                if (entry_.Done != appointment.Done)
+                {
+                    entry_.Done = appointment.Done;
+                }
+
+                if (entry_.Deleted != appointment.Deleted)
+                {
+                    entry_.Deleted = appointment.Deleted;
+                }
+
+                if (entry_.Date != appointment.Date)
+                {
+                    entry_.Date = appointment.Date;
+                }
+
+                if (entry_.Time != appointment.Time)
+                {
+                    entry_.Time = appointment.Time;
+                }
+
+                await _dbContext.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!AppointementExists(id))
                 {
-                    return NotFound();
+                    return NotFound("The appointment with the Id" + " " + id + "does not esits!");
                 }
                 else
                 {
@@ -78,47 +132,64 @@ namespace AppointmentsManger.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok("Appointment updated successfully!");
         }
+
+
+
+         
+
 
         // POST: api/Appointement
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Appointement>> PostAppointement(Appointement appointement)
+        public async Task<ActionResult<Appointment>> PostAppointement(Appointment appointement)
         {
-          if (_context.Appointements == null)
-          {
-              return Problem("Entity set 'AppDbContext.Appointements'  is null.");
-          }
-            _context.Appointements.Add(appointement);
-            await _context.SaveChangesAsync();
+            if (_dbContext.Appointements == null)
+            {
+                return Problem("Entity set 'Appointements'  is null.");
+            }
+            try
+            {
+                _dbContext.Appointements.Add(appointement);
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException e)
+            {
+
+                return BadRequest("Could not create new Appointment: " + e.Message);
+            }
+
 
             return CreatedAtAction("GetAppointement", new { id = appointement.ID }, appointement);
         }
+
 
         // DELETE: api/Appointement/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAppointement(int id)
         {
-            if (_context.Appointements == null)
+            if (_dbContext.Appointements == null)
             {
-                return NotFound();
+                return NotFound("No Data Found!");
             }
-            var appointement = await _context.Appointements.FindAsync(id);
-            if (appointement == null)
+            var appointement = await _dbContext.Appointements.FindAsync(id);
+            if (appointement == null) // now row
             {
-                return NotFound();
+                return NotFound("No appointment with the ID " + id);
             }
 
-            _context.Appointements.Remove(appointement);
-            await _context.SaveChangesAsync();
+            Appointment entry_ = await _dbContext.Appointements.FirstAsync(e => e.ID == appointement.ID);
+            entry_.ModifiedDate = DateTime.Now;
+            entry_.Deleted = true;
+            await _dbContext.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Appointment deleted successfully.");
         }
 
         private bool AppointementExists(int id)
         {
-            return (_context.Appointements?.Any(e => e.ID == id)).GetValueOrDefault();
+            return (_dbContext.Appointements?.Any(e => e.ID == id)).GetValueOrDefault();
         }
     }
 }
