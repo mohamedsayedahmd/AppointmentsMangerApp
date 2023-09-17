@@ -78,3 +78,17 @@ Add-migration -Name Initial -OutputDir "Data/Migrations"
 ```
 update-database
 ```
+
+---
+
+---
+
+## Controller
+
+- Create New Controller:
+  - Common:
+    - API:
+      - API Controller with acitons, using Entity Framework :
+        - Select the model (Appointment)
+        - Select AppDbContext
+      - Add
